@@ -1,0 +1,66 @@
+Project được chia làm 3 phần chính
+ - Tầng repository: tương tác với database (insert, update, ...) -> thư mục repository
+ - Tầng business logic: chứa tất cả logic liên quan đến api process -> thư mục app
+ - Tầng controller: chứa tất cả những api endpoint mà FE có thể call tới
+
+ =======================
+Flow của một request
+ =======================
+Front End
+    --gửi request--> [rest/interceptor]
+    --sau khi filter thông qua interceptor--> [rest/controller]
+    --sau khi controller nhận request--> [app/facade]
+    --sau khi xử lý xong business logic và cần save data vào database--> [/service]
+
+ =======================
+ Giải thích nhiệm vụ từng thư mục
+ =======================
+
+    [/app]: Chứa business logic về xử lý trong api
+
+    [/app/dto]: Chứa DTO (Data transfer object) -> ví dụ từ User record trong database, chúng ta cần convert User
+    đó ra thành UserRead cho api get user của user bình thường và UserReadAdmin dành cho api get user của ADMIN.
+    Ngoài ra ở DTO này sẽ chứa những validation của riêng DTO đó, ví dụ nếu DTO tên là là CreateUserRequest thì chúng ta
+    có thêm validation check valid của địa chỉ user gửi lên dùng để đăng kí tài khoản, hoặc chứa những đoạn code để format
+    lại data.
+    Folder này có thể chứa cả DTO cho request và response. Ví dụ function run-enrichment -> chúng ta có thể thêm 2 DTO vào
+    folder này: RunEnrichmentRequest và RunEnrichmentResponse
+
+    [/app/enums]: Chứ enum
+
+    [/app/event]: Trong microservice, để giao tiếp giữa các service chúng ta có 2 cách:
+        (1) Send event từ service A sang service B, service B listen event và process tiếp.
+        (2) Dùng những tool, thư viện để call internal giữa các service qua HTTP thông thường
+    Nhiệm vụ của folder này là chứa những Event ở ý (1), ở đây chỉ có nhiêệm vụ nhận payload data từ function ở ngoài truyền
+    vào, và sau đó send event đó đi -> hết.
+
+    [/app/exception]: Folder này đơn giản là nơi chứa file xử lý exception trong application, ví dụ như global exception
+    được throw ra từ bất kì api nào đó, sau đó format exception đó và trả về FE. Nó tương tự như @app.exception_handler(Exception) trong python
+
+    [/app/facade]: Đây là folder quang trọng chứ business logic, hầu như tất cả logic đều sẽ nằm ở đây
+    Ở trong một 1 project lớn thì người ta sẽ chia database ra thành 2 daatabse riêng: READ - WRITE
+    Mục đích để giảm tải lượng request và latency.
+    Ở đây chúng ta có thể có thêm 3 folder: read, write để chứa những logic chỉ tương tác với READ database hoặc WRITE database
+
+    [/app/core]: Giống hiện tại, những code core của dự án, vd aws,...
+
+    [/domain/config]: Chứa config nếu có của schema
+
+    [/domain/schema]: Ở đây sẽ chứ schema
+
+    [/infras/message]: Ở đây sẽ chứa logic để nhận event từ service khác gửi tới (nếu như là microservice), và xử ly event đó
+
+    [/infras/utils]: Chứa utils, như format ngày giờ, format text,...
+
+    [/rest]: Ở đây sẽ chứa API endpoints
+
+    [/rest/config]: Chứa config chung của tất cả những endpoint nếu có
+
+    [/rest/controler]: Có thể đặt tên là controller, hoặc là router -> nhiệm vụ nó đơn giản là chứa endpoint api
+
+    [/rest/interceptor]: Chứa interceptor, middleware, filter,.. cho mỗi api request được gửi đến. API request sẽ đi qua
+    đây đầu tiên, sau đó mới vào controller
+
+    [/service]: Đây là nơi để tương tác với database như insert, update hoặc là thực thi những câu query phức tạp.
+
+
